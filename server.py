@@ -53,7 +53,7 @@ try:
             if not line or line == b'\r\n':
                 break
         rows = ['<tr><td>%s</td><td>%d</td></tr>' % (str(p), p.value()) for p in pins]
-        doc = doc_template % rows
+        doc = doc_template % ('\n'.join(rows))
         doc_bytes = bytes(doc,'utf8')
         headers = headers.format(content_length = len(doc_bytes)) #now assign the content's length
         if DEBUG:
