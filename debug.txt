@@ -1,0 +1,48 @@
++ sudo python3 server.py
+listening on ('0.0.0.0', 80)
+client connected from ('127.0.0.1', 51873)
+CLIENT: b'GET / HTTP/1.1\r\n'
+CLIENT: b'Host: 0.0.0.0\r\n'
+CLIENT: b'Connection: keep-alive\r\n'
+CLIENT: b'Upgrade-Insecure-Requests: 1\r\n'
+CLIENT: b'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36\r\n'
+CLIENT: b'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n'
+CLIENT: b'Accept-Encoding: gzip, deflate, sdch\r\n'
+CLIENT: b'Accept-Language: en-US,en;q=0.8\r\n'
+CLIENT: b'\r\n'
+HTTP/1.1 200 OK
+Date: Wed, 01 Feb 2017 23:36:23
+Server: Simple-Python-HTTP-Server
+Content-Length: 465
+Content-Type: text/html
+
+
+<!DOCTYPE html>
+<html>
+    <head> <title>ESP8266 Pins</title> </head>
+    <body> <h1>ESP8266 Pins</h1>
+        <table border="1"> <tr><th>Pin</th><th>Value</th></tr> ['<tr><td>0</td><td>1</td></tr>', '<tr><td>2</td><td>0</td></tr>', '<tr><td>4</td><td>0</td></tr>', '<tr><td>5</td><td>1</td></tr>', '<tr><td>12</td><td>0</td></tr>', '<tr><td>13</td><td>0</td></tr>', '<tr><td>14</td><td>0</td></tr>', '<tr><td>15</td><td>0</td></tr>'] </table>
+    </body>
+</html>
+
+client connected from ('127.0.0.1', 51874)
+CLIENT: b''
+HTTP/1.1 200 OK
+Date: Wed, 01 Feb 2017 23:36:23
+Server: Simple-Python-HTTP-Server
+Content-Length: 465
+Content-Type: text/html
+
+
+<!DOCTYPE html>
+<html>
+    <head> <title>ESP8266 Pins</title> </head>
+    <body> <h1>ESP8266 Pins</h1>
+        <table border="1"> <tr><th>Pin</th><th>Value</th></tr> ['<tr><td>0</td><td>1</td></tr>', '<tr><td>2</td><td>0</td></tr>', '<tr><td>4</td><td>0</td></tr>', '<tr><td>5</td><td>1</td></tr>', '<tr><td>12</td><td>0</td></tr>', '<tr><td>13</td><td>0</td></tr>', '<tr><td>14</td><td>0</td></tr>', '<tr><td>15</td><td>0</td></tr>'] </table>
+    </body>
+</html>
+
+Traceback (most recent call last):
+  File "server.py", line 63, in <module>
+    cl.send(doc_bytes)
+BrokenPipeError: [Errno 32] Broken pipe
