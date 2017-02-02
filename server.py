@@ -11,13 +11,16 @@ pins[0].value = True  #sets pin "0" to high
 pins[3].value = True  #sets pin "5" to high
 
 
-doc_template = """<!DOCTYPE html>
+doc_template = """
+<!DOCTYPE html>
 <html>
     <head> <title>ESP8266 Pins</title> </head>
     <body> <h1>ESP8266 Pins</h1>
         <table border="1"> <tr><th>Pin</th><th>Value</th></tr> %s </table>
     </body>
-</html>"""
+</html>
+"""
+doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
 
 current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 
@@ -36,6 +39,7 @@ addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 
 s = socket.socket()
 try:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(addr)
     s.listen(1)
     print('listening on', addr)
@@ -59,6 +63,7 @@ try:
             print(repr(headers))
             print(repr(doc))
         cl.send(bytes(headers,'utf8'))
+        cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
         cl.send(doc_bytes)
         cl_file.close()
         cl.close()

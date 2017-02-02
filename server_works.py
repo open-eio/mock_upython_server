@@ -11,15 +11,13 @@ pins[0].value = True  #sets pin "0" to high
 pins[3].value = True  #sets pin "5" to high
 
 
-doc_template = """
-<!DOCTYPE html>
+doc_template = """<!DOCTYPE html>
 <html>
     <head> <title>ESP8266 Pins</title> </head>
     <body> <h1>ESP8266 Pins</h1>
         <table border="1"> <tr><th>Pin</th><th>Value</th></tr> %s </table>
     </body>
-</html>
-"""
+</html>"""
 
 current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 
@@ -53,13 +51,14 @@ try:
             if not line or line == b'\r\n':
                 break
         rows = ['<tr><td>%s</td><td>%d</td></tr>' % (str(p), p.value()) for p in pins]
-        doc = doc_template % rows
+        doc = doc_template % " ".join(rows)
         doc_bytes = bytes(doc,'utf8')
-        headers = headers.format(content_length = len(doc_bytes)-1) #now assign the content's length
+        headers = headers.format(content_length = len(doc_bytes)) #now assign the content's length
         if DEBUG:
-            print(headers)
-            print(doc)
+            print(repr(headers))
+            print(repr(doc))
         cl.send(bytes(headers,'utf8'))
+        cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
         cl.send(doc_bytes)
         cl_file.close()
         cl.close()
