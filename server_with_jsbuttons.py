@@ -100,14 +100,15 @@ try:
     while True:
         try:
             cl, addr = s.accept()
+            print("-"*80)
             print('client connected from', addr)
             cl_file = cl.makefile('rwb', 0)
-            header_line = str(cl_file.readline(),'utf8')
-            _, req_file, protocol = header_line.strip().split()
+            header_line = str(cl_file.readline(),'utf8').strip()
+            _, req_file, protocol = header_line.split()
             if DEBUG:
                 print("CLIENT: %s" % header_line)
             while True:
-                line = cl_file.readline()
+                line = str(cl_file.readline(),'utf8').strip()
                 if DEBUG:
                     print("CLIENT: %s" % line)
                 if not line or line == b'\r\n':
