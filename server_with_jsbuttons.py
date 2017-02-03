@@ -39,7 +39,7 @@ javascript = """
   function postToggle (btn_id) {
     var form = document.createElement('form');
     form.setAttribute('method', 'post');
-    form.setAttribute('action', 'http://0.0.0.0');
+    form.setAttribute('action', 'http://0.0.0.0?btn_id='+btn_id);
     form.setAttribute('btn_id', btn_id);
     form.style.display = 'hidden';
     document.body.appendChild(form)
@@ -103,8 +103,16 @@ try:
             print("-"*80)
             print('client connected from', addr)
             cl_file = cl.makefile('rwb', 0)
+            #parse the request header
             header_line = str(cl_file.readline(),'utf8').strip()
-            _, req_file, protocol = header_line.split()
+            _, req, protocol = header_line.split()
+            #split off any params if they exist
+            req = req.split("?")
+            req_file = req[0]
+            params = {}
+            if len(req) == 2:
+                pairs = req[1].split("&")
+                params = dict(pair.split("=") for pair in pairs)
             if DEBUG:
                 print("CLIENT: %s" % header_line)
             while True:
@@ -134,7 +142,7 @@ try:
                     if DEBUG:
                         print("FINALIZING AND SENDING DOCUMENT")
                     #finalize and send the document
-                    header_bytes, doc_bytes = finalize_document(comment = "POSTED")
+                    header_bytes, doc_bytes = finalize_document(comment = "POSTED %r" % params)
                     cl.send(header_bytes)
                     cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
                     cl.send(doc_bytes)
