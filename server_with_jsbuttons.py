@@ -14,39 +14,39 @@ pins[3].value = True  #sets pin "5" to high
 doc_template = """
 <!DOCTYPE html>
 <html>
-    <head> <title>ESP8266 Pins</title> 
+    <head> <title>ESP8266 Pins</title>
     </head>
     <body> <h1>ESP8266 Pins</h1>
         <table border="1"> <tr><th>Pin</th><th>Value</th></tr>{table_content}</table>
         <div>{comment}</div>
     </body>
-    {javascript}
+    <script>
+        {javascript}
+    </script>
 </html>
 """
 
 doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
 
 javascript = """
-<script>
-  document.body.addEventListener("click", function(event) {
-    if (event.target.nodeName == "BUTTON"){
-      var btn_id = event.target.getAttribute("id")
-      console.log("Clicked", btn_id);
-      postToggle(btn_id);
-    }
-  });
-  
-  function postToggle (btn_id) {
-    var form = document.createElement('form');
-    form.setAttribute('method', 'post');
-    form.setAttribute('action', 'http://0.0.0.0?btn_id='+btn_id);
-    form.setAttribute('btn_id', btn_id);
-    form.style.display = 'hidden';
-    document.body.appendChild(form)
-    form.submit();
-  }
-</script>
+          document.body.addEventListener("click", function(event) {
+            if (event.target.nodeName == "BUTTON"){
+              var btn_id = event.target.getAttribute("id")
+              console.log("Clicked", btn_id);
+              postToggle(btn_id);
+            }
+          });
+          
+          function postToggle (btn_id) {
+            var form = document.createElement('form');
+            form.setAttribute('method', 'post');
+            form.setAttribute('action', 'http://0.0.0.0?btn_id='+btn_id);
+            form.style.display = 'hidden';
+            document.body.appendChild(form)
+            form.submit();
+          }
 """
+javascript = javascript.strip()
 
 row_template = """
 <tr>
