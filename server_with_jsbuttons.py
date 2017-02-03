@@ -14,41 +14,79 @@ pins[3].value = True  #sets pin "5" to high
 doc_template = """
 <!DOCTYPE html>
 <html>
-    <head> <title>ESP8266 Pins</title> </head>
+    <head> <title>ESP8266 Pins</title> 
+    </head>
     <body> <h1>ESP8266 Pins</h1>
-        <table border="1"> <tr><th>Pin</th><th>Value</th></tr> %s </table>
+        <table border="1"> <tr><th>Pin</th><th>Value</th></tr>{table_content}</table>
+        <div>{comment}</div>
     </body>
+    {javascript}
 </html>
+"""
+
+doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
+
+javascript = """
 <script>
   document.body.addEventListener("click", function(event) {
-    if (event.target.nodeName == "TR")
-      console.log("Clicked", event.target.textContent);
+    if (event.target.nodeName == "BUTTON"){
+      var btn_id = event.target.getAttribute("id")
+      console.log("Clicked", btn_id);
+      postToggle(btn_id);
+    }
   });
   
-  function postToggle () {
+  function postToggle (btn_id) {
     var form = document.createElement('form');
     form.setAttribute('method', 'post');
     form.setAttribute('action', 'http://0.0.0.0');
+    form.setAttribute('btn_id', btn_id);
     form.style.display = 'hidden';
     document.body.appendChild(form)
     form.submit();
   }
 </script>
 """
-doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
+
+row_template = """
+<tr>
+  <td>{pin_id}</td>
+  <td>{pin_value}</td>
+  <td>
+    <button type="button" id="btn{pin_id}">togggle</button>
+  </td>
+</tr>
+"""
 
 current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
 
-headers = ["HTTP/1.1 200 OK",
-           "Date: %s" % current_date,
-           "Server: Simple-Python-HTTP-Server",
-           "Content-Length: {content_length}",  #hold this place with a formatter
-           "Content-Type: text/html",
-           "Connection: close",
-           ""  #NOTE blank line needed!
-           ]
+headers_template = [
+    "HTTP/1.1 200 OK",
+    "Date: %s" % current_date,
+    "Server: Simple-Python-HTTP-Server",
+    "Content-Length: {content_length}",  #hold this place with a formatter
+    "Content-Type: text/html",
+    "Connection: close",
+    ""  #NOTE blank line needed!
+]
 
-headers = "\r\n".join(headers)
+headers_template = "\r\n".join(headers_template)
+
+def finalize_document(comment = ""):
+    #NOTE this content must be generated dynamically
+    rows = [row_template.format(pin_id = str(p),pin_value=p.value()) for p in pins]
+    
+    rows = ' '.join(rows) #empty line cause row to indent properly
+            
+    doc = doc_template.format(javascript = javascript,
+                              table_content = rows,
+                              comment = comment,
+                              )
+    doc_bytes = bytes(doc,'utf8')
+    headers = headers_template.format(content_length = len(doc_bytes)) #now assign the content's length
+    header_bytes = bytes(headers,'utf8')
+    return (header_bytes, doc_bytes)
+
 
 addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 
@@ -60,27 +98,47 @@ try:
     print('listening on', addr)
 
     while True:
-        cl, addr = s.accept()
-        print('client connected from', addr)
-        cl_file = cl.makefile('rwb', 0)
-        while True:
-            line = cl_file.readline()
+        try:
+            cl, addr = s.accept()
+            print('client connected from', addr)
+            cl_file = cl.makefile('rwb', 0)
+            header_line = str(cl_file.readline(),'utf8')
+            _, req_file, protocol = header_line.strip().split()
             if DEBUG:
-                print("CLIENT: %s" % line)
-            if not line or line == b'\r\n':
-                break
-        rows = ['<tr><td>%s</td><td>%d</td><td><button type="button" onclick="postToggle();">togggle</button></td></tr>' % (str(p), p.value()) for p in pins]
-        table_content = ' '.join(rows) #empty line cause row to indent properly
-        doc = doc_template % table_content
-        doc_bytes = bytes(doc,'utf8')
-        headers = headers.format(content_length = len(doc_bytes)) #now assign the content's length
-        if DEBUG:
-            print(repr(headers))
-            print(repr(doc))
-        cl.send(bytes(headers,'utf8'))
-        cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
-        cl.send(doc_bytes)
-        cl_file.close()
-        cl.close()
+                print("CLIENT: %s" % header_line)
+            while True:
+                line = cl_file.readline()
+                if DEBUG:
+                    print("CLIENT: %s" % line)
+                if not line or line == b'\r\n':
+                    break
+            if header_line.startswith("GET"):
+                if DEBUG:
+                    print("RESPONDING TO GET")
+                if req_file == "/":
+                    if DEBUG:
+                        print("FINALIZING AND SENDING DOCUMENT")
+                    #finalize and send the document
+                    header_bytes, doc_bytes = finalize_document()
+                    cl.send(header_bytes)
+                    cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
+                    cl.send(doc_bytes)
+                else:
+                    if DEBUG:
+                        print("WARNING: don't have file: %s" % req_file)
+            elif header_line.startswith("POST"):
+                if DEBUG:
+                    print("RESPONDING TO POST")
+                if req_file == "/":
+                    if DEBUG:
+                        print("FINALIZING AND SENDING DOCUMENT")
+                    #finalize and send the document
+                    header_bytes, doc_bytes = finalize_document(comment = "POSTED")
+                    cl.send(header_bytes)
+                    cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
+                    cl.send(doc_bytes)
+        finally:
+            cl_file.close()
+            cl.close()
 finally:
     s.close()
