@@ -21,9 +21,18 @@ doc_template = """
 </html>
 <script>
   document.body.addEventListener("click", function(event) {
-    if (event.target.nodeName == "TD")
+    if (event.target.nodeName == "TR")
       console.log("Clicked", event.target.textContent);
   });
+  
+  function postToggle () {
+    var form = document.createElement('form');
+    form.setAttribute('method', 'post');
+    form.setAttribute('action', 'http://0.0.0.0');
+    form.style.display = 'hidden';
+    document.body.appendChild(form)
+    form.submit();
+  }
 </script>
 """
 doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
@@ -60,7 +69,7 @@ try:
                 print("CLIENT: %s" % line)
             if not line or line == b'\r\n':
                 break
-        rows = ['<tr><td>%s</td><td>%d</td></tr>' % (str(p), p.value()) for p in pins]
+        rows = ['<tr><td>%s</td><td>%d</td><td><button type="button" onclick="postToggle();">togggle</button></td></tr>' % (str(p), p.value()) for p in pins]
         table_content = ' '.join(rows) #empty line cause row to indent properly
         doc = doc_template % table_content
         doc_bytes = bytes(doc,'utf8')
