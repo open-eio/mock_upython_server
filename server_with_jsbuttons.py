@@ -111,8 +111,13 @@ try:
             req_file = req[0]
             params = {}
             if len(req) == 2:
-                pairs = req[1].split("&")
-                params = dict(pair.split("=") for pair in pairs)
+                items = req[1].split("&")
+                for item in items:
+                    item = item.split("=")
+                    if len(item) == 1:
+                        params[item[0]] = None
+                    elif len(item) == 2:
+                        params[item[0]] = item[1]
             if DEBUG:
                 print("CLIENT: %s" % header_line)
             while True:
