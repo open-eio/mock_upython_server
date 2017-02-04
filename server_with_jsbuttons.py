@@ -1,14 +1,22 @@
 import time, socket
 import mock_machine as machine
 
+try:
+    from collections import OrderedDict
+except ImportError: 
+    from ucollections import OrderedDict #micrpython specific
+
 DEBUG = False
 DEBUG = True
 
-pins = [machine.Pin(i, machine.Pin.IN) for i in (0, 2, 4, 5, 12, 13, 14, 15)]
+PIN_NUMBERS = (0, 2, 4, 5, 12, 13, 14, 15)
+SERVER_IP = '0.0.0.0'
+
+PINS = OrderedDict((i,machine.Pin(i, machine.Pin.IN)) for i in PIN_NUMBERS)
 
 #here are some mocked test settings
-pins[0].value = True  #sets pin "0" to high
-pins[3].value = True  #sets pin "5" to high
+PINS[0].value = True  #sets pin "0" to high
+PINS[5].value = True  #sets pin "5" to high
 
 
 doc_template = """
@@ -28,7 +36,7 @@ doc_template = """
 
 doc_template = doc_template.strip() #remove troublesome leading (and trailing) whitespace
 
-javascript = """
+javascript_template = """
           document.body.addEventListener("click", function(event) {
             if (event.target.nodeName == "BUTTON"){
               var btn_id = event.target.getAttribute("id")
@@ -40,12 +48,14 @@ javascript = """
           function postToggle (btn_id) {
             var form = document.createElement('form');
             form.setAttribute('method', 'post');
-            form.setAttribute('action', 'http://0.0.0.0?btn_id='+btn_id);
+            form.setAttribute('action', 'http://%s?btn_id='+btn_id);
             form.style.display = 'hidden';
             document.body.appendChild(form)
             form.submit();
           }
 """
+javascript = javascript_template % SERVER_IP
+
 javascript = javascript.strip()
 
 row_template = """
@@ -72,9 +82,9 @@ headers_template = [
 
 headers_template = "\r\n".join(headers_template)
 
-def finalize_document(comment = ""):
+def finalize_document(pins, comment = ""):
     #NOTE this content must be generated dynamically
-    rows = [row_template.format(pin_id = str(p),pin_value=p.value()) for p in pins]
+    rows = [row_template.format(pin_id = str(pin),pin_value=pin.value()) for pn,pin in pins.items()]
     
     rows = ' '.join(rows) #empty line cause row to indent properly
             
@@ -88,7 +98,7 @@ def finalize_document(comment = ""):
     return (header_bytes, doc_bytes)
 
 
-addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
+addr = socket.getaddrinfo(SERVER_IP, 80)[0][-1]
 
 s = socket.socket()
 try:
@@ -133,7 +143,7 @@ try:
                     if DEBUG:
                         print("FINALIZING AND SENDING DOCUMENT")
                     #finalize and send the document
-                    header_bytes, doc_bytes = finalize_document()
+                    header_bytes, doc_bytes = finalize_document(pins = PINS)
                     cl.send(header_bytes)
                     cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
                     cl.send(doc_bytes)
@@ -146,8 +156,13 @@ try:
                 if req_file == "/":
                     if DEBUG:
                         print("FINALIZING AND SENDING DOCUMENT")
+                    #get the button id from the params and pull out the corresponding pin object
+                    btn_id = params['btn_id']
+                    pin_id = int(btn_id[3:])#pattern is "btn\d\d"
+                    pin = PINS[pin_id]
+                    pin.value = not pin.value()
                     #finalize and send the document
-                    header_bytes, doc_bytes = finalize_document(comment = "POSTED %r" % params)
+                    header_bytes, doc_bytes = finalize_document(pins = PINS, comment = "Toggled pin %d" % pin_id)
                     cl.send(header_bytes)
                     cl.send(bytes("\r\n",'utf8'))  #IMPORTANT must have a blank line here
                     cl.send(doc_bytes)
